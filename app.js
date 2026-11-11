@@ -207,7 +207,7 @@
       dateInput.value = localDateString();
       repsInput.value = "8";
       setsInput.value = "3";
-      setStatus(`${entry.exercise} saved.`);
+      setStatus(`${entry.exercise} saved on this device.`);
       exerciseInput.focus();
     }
   });
