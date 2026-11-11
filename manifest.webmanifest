@@ -1,0 +1,18 @@
+{
+  "name": "Workout Log",
+  "short_name": "Workout Log",
+  "description": "A private, simple log for strength training workouts.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6ff",
+  "theme_color": "#f3f6ff",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

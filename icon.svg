@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- A simple dumbbell badge that stays sharp at any home-screen icon size. -->
+  <rect width="512" height="512" rx="112" fill="#5157d8"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="36">
+    <path d="M170 256h172"/>
+    <path d="M130 182v148M88 208v64M382 182v148M424 208v64"/>
+    <path d="M130 210h40v92h-40M342 210h40v92h-40"/>
+  </g>
+</svg>
