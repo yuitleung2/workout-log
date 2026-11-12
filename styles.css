@@ -149,7 +149,9 @@ fieldset {
   font-weight: 550;
 }
 
-.field input {
+/* Give the exercise dropdown the same touch-friendly shape as the text and number fields. */
+.field input,
+.field select {
   width: 100%;
   min-height: 49px;
   padding: 11px 12px;
@@ -166,7 +168,8 @@ fieldset {
   opacity: 1;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   border-color: #7478ee;
   outline: 3px solid rgba(116, 120, 238, 0.16);
 }

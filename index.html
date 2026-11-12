@@ -37,15 +37,12 @@
         <fieldset id="workout-fields">
           <label class="field field-wide" for="exercise">
             <span>Exercise</span>
-            <input id="exercise" name="exercise" type="text" list="exercise-suggestions"
-              placeholder="e.g. Bench press" maxlength="60" autocomplete="off" required>
-            <datalist id="exercise-suggestions">
-              <option value="Bench press"></option>
-              <option value="Squat"></option>
-              <option value="Deadlift"></option>
-              <option value="Overhead press"></option>
-              <option value="Barbell row"></option>
-            </datalist>
+            <select id="exercise" name="exercise" required>
+              <option value="" selected disabled>Choose an exercise</option>
+              <option value="Bench press">BP - Bench press</option>
+              <option value="Deadlift">DL - Deadlift</option>
+              <option value="Squat">SQ - Squat</option>
+            </select>
           </label>
 
           <label class="field field-wide" for="workout-date">

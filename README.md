@@ -1,6 +1,6 @@
 # Workout Log
 
-A phone-friendly workout tracker. Each entry saves the date, exercise, weight in kilograms, reps per set, and number of sets. A chart updates when workouts are saved or imported and shows the top logged weight by date for squat (SQ), bench press (BP), and deadlift (DL), over the latest 12 lifting dates. Entries are stored in the browser on the device; there is no account or server.
+A phone-friendly workout tracker. Choose bench press (BP), deadlift (DL), or squat (SQ) from the exercise dropdown. Each entry saves the date, exercise, weight in kilograms, reps per set, and number of sets. A chart updates when workouts are saved or imported and shows the top logged weight by date for the three lifts, over the latest 12 lifting dates. Entries are stored in the browser on the device; there is no account or server.
 
 ## Try it on a computer
 
