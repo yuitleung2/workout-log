@@ -80,6 +80,26 @@
       <p class="status-message" id="status" role="status" aria-live="polite"></p>
     </section>
 
+    <section class="chart-card" aria-labelledby="chart-title">
+      <div class="section-heading chart-heading">
+        <div>
+          <p class="eyebrow">See your strength grow</p>
+          <h2 id="chart-title">Lift progress</h2>
+        </div>
+        <span class="heading-icon" aria-hidden="true">📈</span>
+      </div>
+      <p class="chart-description">Top weight logged for SQ (squat), BP (bench press), and DL (deadlift), in kg.</p>
+      <div class="chart-empty" id="chart-empty">
+        <span aria-hidden="true">🏁</span>
+        <p>Log a squat, bench press, or deadlift to start your chart.</p>
+      </div>
+      <div class="chart-container" id="chart-container" hidden>
+        <div class="chart-legend" id="chart-legend" aria-label="Chart lifts"></div>
+        <svg class="progress-chart" id="progress-chart" viewBox="0 0 360 238"
+          role="img" aria-labelledby="chart-svg-title chart-svg-description"></svg>
+      </div>
+    </section>
+
     <section class="history-section" aria-labelledby="history-title">
       <div class="history-heading">
         <div>

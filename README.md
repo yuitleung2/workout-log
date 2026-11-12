@@ -1,6 +1,6 @@
 # Workout Log
 
-A phone-friendly workout tracker. Each entry saves the date, exercise, weight in kilograms, reps per set, and number of sets. Entries are stored in the browser on the device; there is no account or server.
+A phone-friendly workout tracker. Each entry saves the date, exercise, weight in kilograms, reps per set, and number of sets. A chart tracks the top logged weight by date for squat (SQ), bench press (BP), and deadlift (DL). Entries are stored in the browser on the device; there is no account or server.
 
 ## Try it on a computer
 

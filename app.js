@@ -14,6 +14,16 @@
   const emptyState = document.querySelector("#empty-state");
   const workoutList = document.querySelector("#workout-list");
   const exportButton = document.querySelector("#export-button");
+  const chartEmpty = document.querySelector("#chart-empty");
+  const chartContainer = document.querySelector("#chart-container");
+  const chartLegend = document.querySelector("#chart-legend");
+  const progressChart = document.querySelector("#progress-chart");
+
+  const trackedLifts = [
+    { key: "SQ", label: "Squat", color: "#5861d8" },
+    { key: "BP", label: "Bench press", color: "#e87853" },
+    { key: "DL", label: "Deadlift", color: "#259b83" },
+  ];
 
   let entries = [];
   let storageReady = true;
@@ -120,6 +130,178 @@
     return item;
   }
 
+  function getLiftKey(exerciseName) {
+    // Accept common names and abbreviations so charting does not depend on exact capitalization.
+    const name = exerciseName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (["sq", "squat", "squats", "backsquat", "frontsquat"].includes(name)) {
+      return "SQ";
+    }
+    if (["bp", "bench", "benchpress", "barbellbenchpress"].includes(name)) {
+      return "BP";
+    }
+    if (["dl", "deadlift", "sumodeadlift", "conventionaldeadlift"].includes(name)) {
+      return "DL";
+    }
+    return null;
+  }
+
+  function createSvgElement(tagName, attributes, text) {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tagName);
+    for (const [name, value] of Object.entries(attributes)) {
+      element.setAttribute(name, value);
+    }
+    if (text !== undefined) {
+      element.textContent = text;
+    }
+    return element;
+  }
+
+  function renderProgressChart() {
+    const liftDates = new Map();
+    for (const entry of entries) {
+      const liftKey = getLiftKey(entry.exercise);
+      if (!liftKey) {
+        continue;
+      }
+
+      if (!liftDates.has(entry.date)) {
+        liftDates.set(entry.date, new Map());
+      }
+      const dateLifts = liftDates.get(entry.date);
+      dateLifts.set(liftKey, Math.max(dateLifts.get(liftKey) ?? 0, entry.weight));
+    }
+
+    const dates = [...liftDates.keys()].sort();
+    if (dates.length === 0) {
+      chartEmpty.hidden = false;
+      chartContainer.hidden = true;
+      return;
+    }
+
+    // Limit the chart to the 12 latest lifting dates so labels remain readable on a phone.
+    const chartDates = dates.slice(-12);
+    const maxWeight = Math.max(...chartDates.flatMap((date) => [...liftDates.get(date).values()]));
+    const yMaximum = Math.max(25, Math.ceil(maxWeight / 25) * 25);
+    const plot = { left: 42, right: 346, top: 16, bottom: 184 };
+    const chartWidth = plot.right - plot.left;
+    const chartHeight = plot.bottom - plot.top;
+    const xForDate = (index) => chartDates.length === 1
+      ? plot.left + chartWidth / 2
+      : plot.left + (index / (chartDates.length - 1)) * chartWidth;
+    const yForWeight = (weight) => plot.bottom - (weight / yMaximum) * chartHeight;
+
+    progressChart.replaceChildren();
+    progressChart.append(
+      createSvgElement("title", { id: "chart-svg-title" }, "Squat, bench press, and deadlift weight progress"),
+      createSvgElement(
+        "desc",
+        { id: "chart-svg-description" },
+        `Highest weight in kilograms per exercise on each date, over the latest ${chartDates.length} lifting dates.`,
+      ),
+    );
+
+    // Draw four horizontal guides to make it easier to estimate weights from the chart.
+    for (let step = 0; step <= 4; step += 1) {
+      const weight = (yMaximum / 4) * step;
+      const y = yForWeight(weight);
+      progressChart.append(
+        createSvgElement("line", {
+          x1: plot.left,
+          y1: y,
+          x2: plot.right,
+          y2: y,
+          class: "chart-grid-line",
+        }),
+        createSvgElement("text", {
+          x: plot.left - 7,
+          y: y + 3.5,
+          class: "chart-axis-label",
+          "text-anchor": "end",
+        }, Number.isInteger(weight) ? String(weight) : weight.toFixed(1)),
+      );
+    }
+
+    const labelIndexes = new Set([0, chartDates.length - 1]);
+    if (chartDates.length > 3) {
+      labelIndexes.add(Math.round((chartDates.length - 1) / 3));
+      labelIndexes.add(Math.round(((chartDates.length - 1) * 2) / 3));
+    }
+    for (const index of [...labelIndexes].sort((first, second) => first - second)) {
+      const [year, month, day] = chartDates[index].split("-").map(Number);
+      const dateLabel = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" })
+        .format(new Date(year, month - 1, day));
+      progressChart.append(
+        createSvgElement("text", {
+          x: xForDate(index),
+          y: plot.bottom + 22,
+          class: "chart-axis-label chart-date-label",
+          "text-anchor": index === 0 ? "start" : index === chartDates.length - 1 ? "end" : "middle",
+        }, dateLabel),
+      );
+    }
+
+    chartLegend.replaceChildren();
+    for (const lift of trackedLifts) {
+      const legendItem = makeElement("span", "legend-item");
+      const swatch = makeElement("span", "legend-swatch");
+      swatch.style.backgroundColor = lift.color;
+      swatch.setAttribute("aria-hidden", "true");
+      legendItem.append(swatch, document.createTextNode(`${lift.key} · ${lift.label}`));
+      chartLegend.append(legendItem);
+
+      let segment = [];
+      const drawSegment = () => {
+        if (segment.length > 1) {
+          const pathData = segment
+            .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+            .join(" ");
+          progressChart.append(createSvgElement("path", {
+            d: pathData,
+            class: "chart-series-line",
+            stroke: lift.color,
+          }));
+        }
+
+        for (const point of segment) {
+          const circle = createSvgElement("circle", {
+            cx: point.x,
+            cy: point.y,
+            r: 4.5,
+            class: "chart-point",
+            fill: lift.color,
+          });
+          circle.append(createSvgElement(
+            "title",
+            {},
+            `${lift.key} · ${point.dateLabel}: ${point.weight} kg`,
+          ));
+          progressChart.append(circle);
+        }
+        segment = [];
+      };
+
+      chartDates.forEach((date, index) => {
+        const weight = liftDates.get(date).get(lift.key);
+        if (weight === undefined) {
+          drawSegment();
+          return;
+        }
+
+        const [year, month, day] = date.split("-").map(Number);
+        const dateLabel = new Intl.DateTimeFormat(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }).format(new Date(year, month - 1, day));
+        segment.push({ x: xForDate(index), y: yForWeight(weight), dateLabel, weight });
+      });
+      drawSegment();
+    }
+
+    chartEmpty.hidden = true;
+    chartContainer.hidden = false;
+  }
+
   function renderEntries() {
     const sortedEntries = [...entries].sort((first, second) => {
       return second.date.localeCompare(first.date)
@@ -154,6 +336,7 @@
       : `${entries.length} ${entries.length === 1 ? "exercise" : "exercises"} logged · ${totalSets} total ${totalSets === 1 ? "set" : "sets"}`;
     emptyState.hidden = entries.length !== 0;
     exportButton.disabled = entries.length === 0;
+    renderProgressChart();
   }
 
   function createEntryId() {
