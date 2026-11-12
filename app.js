@@ -38,6 +38,19 @@
     return `${year}-${month}-${day}`;
   }
 
+  function populateNumberSelect(select, minimum, maximum, step, defaultValue) {
+    // Generate consistent numeric choices for touch-friendly workout entry on phones.
+    const optionCount = Math.floor((maximum - minimum) / step);
+    for (let index = 0; index <= optionCount; index += 1) {
+      const value = Number((minimum + index * step).toFixed(2));
+      const option = document.createElement("option");
+      option.value = String(value);
+      option.textContent = String(value);
+      select.append(option);
+    }
+    select.value = String(defaultValue);
+  }
+
   function isValidEntry(entry) {
     return entry !== null
       && typeof entry === "object"
@@ -571,6 +584,9 @@
   importButton.addEventListener("click", () => csvInput.click());
   csvInput.addEventListener("change", importCsv);
 
+  populateNumberSelect(weightInput, 0, 300, 2.5, "");
+  populateNumberSelect(repsInput, 1, 30, 1, 8);
+  populateNumberSelect(setsInput, 1, 10, 1, 3);
   dateInput.value = localDateString();
   loadEntries();
   renderEntries();

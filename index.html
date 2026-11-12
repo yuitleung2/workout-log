@@ -52,20 +52,23 @@
 
           <label class="field" for="weight">
             <span>Weight <small>kg</small></span>
-            <input id="weight" name="weight" type="number" inputmode="decimal"
-              min="0" max="1000" step="0.25" placeholder="60" required>
+            <select id="weight" name="weight" required>
+              <option value="" selected disabled>Choose weight</option>
+            </select>
           </label>
 
           <label class="field" for="reps">
             <span>Reps <small>each set</small></span>
-            <input id="reps" name="reps" type="number" inputmode="numeric"
-              min="1" max="1000" step="1" value="8" required>
+            <select id="reps" name="reps" required>
+              <option value="" selected disabled>Choose reps</option>
+            </select>
           </label>
 
           <label class="field field-wide" for="sets">
             <span>Sets</span>
-            <input id="sets" name="sets" type="number" inputmode="numeric"
-              min="1" max="100" step="1" value="3" required>
+            <select id="sets" name="sets" required>
+              <option value="" selected disabled>Choose sets</option>
+            </select>
           </label>
 
           <button class="primary-button field-wide" type="submit">
@@ -73,7 +76,7 @@
           </button>
         </fieldset>
       </form>
-      <p class="form-hint">One entry records the same weight and reps for every set.</p>
+      <p class="form-hint">Weight: 0–300 kg in 2.5 kg steps. Reps: 1–30. Sets: 1–10. One entry records the same weight and reps for every set.</p>
       <p class="status-message" id="status" role="status" aria-live="polite"></p>
     </section>
 
