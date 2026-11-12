@@ -344,6 +344,14 @@ fieldset {
   align-items: end;
 }
 
+/* Keep backup controls together while allowing them to wrap on narrow screens. */
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .export-button {
   min-height: 40px;
   padding: 8px 12px;

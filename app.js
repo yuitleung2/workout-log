@@ -14,6 +14,8 @@
   const emptyState = document.querySelector("#empty-state");
   const workoutList = document.querySelector("#workout-list");
   const exportButton = document.querySelector("#export-button");
+  const importButton = document.querySelector("#import-button");
+  const csvInput = document.querySelector("#csv-input");
   const chartEmpty = document.querySelector("#chart-empty");
   const chartContainer = document.querySelector("#chart-container");
   const chartLegend = document.querySelector("#chart-legend");
@@ -73,6 +75,7 @@
       storageReady = false;
       fields.disabled = true;
       exportButton.disabled = true;
+      importButton.disabled = true;
       setStatus("Saved workouts could not be read, so adding entries is disabled to protect your data.");
       console.error("Could not load workout entries.", error);
     }
@@ -344,6 +347,159 @@
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   }
 
+  function parseCsv(text) {
+    // Parse quoted CSV cells so commas and quotes in exercise names survive a backup round-trip.
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let insideQuotes = false;
+
+    for (let index = 0; index < text.length; index += 1) {
+      const character = text[index];
+      if (insideQuotes) {
+        if (character === '"' && text[index + 1] === '"') {
+          cell += '"';
+          index += 1;
+        } else if (character === '"') {
+          insideQuotes = false;
+        } else {
+          cell += character;
+        }
+      } else if (character === '"' && cell.length === 0) {
+        insideQuotes = true;
+      } else if (character === ",") {
+        row.push(cell);
+        cell = "";
+      } else if (character === "\n" || character === "\r") {
+        row.push(cell);
+        rows.push(row);
+        row = [];
+        cell = "";
+        if (character === "\r" && text[index + 1] === "\n") {
+          index += 1;
+        }
+      } else {
+        if (character === '"') {
+          throw new Error(`Unexpected quote on row ${rows.length + 1}.`);
+        }
+        cell += character;
+      }
+    }
+
+    if (insideQuotes) {
+      throw new Error("The CSV ends inside a quoted field.");
+    }
+    if (cell.length > 0 || row.length > 0) {
+      row.push(cell);
+      rows.push(row);
+    }
+
+    const nonEmptyRows = rows.filter((csvRow) => csvRow.some((value) => value.trim() !== ""));
+    if (nonEmptyRows.length === 0) {
+      throw new Error("The CSV file is empty.");
+    }
+
+    const expectedHeaders = ["Date", "Exercise", "Weight (kg)", "Reps per set", "Sets"];
+    const headers = nonEmptyRows[0].map((header) => header.trim().toLowerCase());
+    if (!expectedHeaders.every((header, index) => headers[index] === header.toLowerCase())
+      || headers.length !== expectedHeaders.length) {
+      throw new Error("This file is not a Workout Log CSV backup.");
+    }
+    if (nonEmptyRows.length === 1) {
+      throw new Error("The CSV contains no workout entries.");
+    }
+
+    const importedEntries = [];
+    for (const [index, csvRow] of nonEmptyRows.slice(1).entries()) {
+      const rowNumber = index + 2;
+      if (csvRow.length !== expectedHeaders.length) {
+        throw new Error(`Row ${rowNumber} must contain exactly five columns.`);
+      }
+
+      const [date, rawExercise, rawWeight, rawReps, rawSets] = csvRow.map((value) => value.trim());
+      const exercise = rawExercise;
+      const dateParts = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const parsedDate = dateParts ? new Date(`${date}T00:00:00Z`) : null;
+      const validDate = parsedDate
+        && Number.isFinite(parsedDate.getTime())
+        && parsedDate.toISOString().slice(0, 10) === date;
+      const weight = Number(rawWeight);
+      const reps = Number(rawReps);
+      const sets = Number(rawSets);
+      if (!validDate || !exercise || exercise.length > 60
+        || !/^\d+(?:\.\d+)?$/.test(rawWeight) || !Number.isFinite(weight) || weight > 1000
+        || !/^\d+$/.test(rawReps) || !Number.isInteger(reps) || reps < 1 || reps > 1000
+        || !/^\d+$/.test(rawSets) || !Number.isInteger(sets) || sets < 1 || sets > 100) {
+        throw new Error(`Row ${rowNumber} has an invalid date, exercise, weight, reps, or sets value.`);
+      }
+
+      importedEntries.push({ date, exercise, weight, reps, sets });
+    }
+    return importedEntries;
+  }
+
+  function mergeImportedEntries(importedEntries) {
+    const entryCounts = new Map();
+    const entryKey = (entry) => JSON.stringify([
+      entry.date,
+      entry.exercise,
+      entry.weight,
+      entry.reps,
+      entry.sets,
+    ]);
+
+    for (const entry of entries) {
+      const key = entryKey(entry);
+      entryCounts.set(key, (entryCounts.get(key) ?? 0) + 1);
+    }
+
+    const importedCounts = new Map();
+    const addedEntries = [];
+    for (const entry of importedEntries) {
+      const key = entryKey(entry);
+      const importedCount = (importedCounts.get(key) ?? 0) + 1;
+      importedCounts.set(key, importedCount);
+      if (importedCount > (entryCounts.get(key) ?? 0)) {
+        addedEntries.push({
+          ...entry,
+          id: createEntryId(),
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+    return addedEntries;
+  }
+
+  async function importCsv() {
+    const file = csvInput.files[0];
+    if (!file) {
+      return;
+    }
+
+    let readingFile = true;
+    try {
+      const text = (await file.text()).replace(/^\uFEFF/, "");
+      readingFile = false;
+      const importedEntries = parseCsv(text);
+      const addedEntries = mergeImportedEntries(importedEntries);
+      if (addedEntries.length === 0) {
+        setStatus("All workouts in this CSV are already saved on this device.");
+      } else if (saveEntries([...addedEntries, ...entries])) {
+        setStatus(`Imported ${addedEntries.length} ${addedEntries.length === 1 ? "workout" : "workouts"} from CSV.`);
+      }
+    } catch (error) {
+      if (readingFile) {
+        setStatus("Could not read this CSV file. Please try selecting it again.");
+        console.error("Could not read the selected workout CSV.", error);
+      } else {
+        const message = error instanceof Error ? error.message : "Unexpected CSV error.";
+        setStatus(`Could not import CSV: ${message}`);
+      }
+    } finally {
+      csvInput.value = "";
+    }
+  }
+
   function exportCsv() {
     const csvCell = (value) => `"${String(value).replace(/"/g, '""')}"`;
     const rows = [
@@ -412,6 +568,8 @@
   });
 
   exportButton.addEventListener("click", exportCsv);
+  importButton.addEventListener("click", () => csvInput.click());
+  csvInput.addEventListener("change", importCsv);
 
   dateInput.value = localDateString();
   loadEntries();

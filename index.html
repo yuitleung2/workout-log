@@ -88,7 +88,7 @@
         </div>
         <span class="heading-icon" aria-hidden="true">📈</span>
       </div>
-      <p class="chart-description">Top weight logged for SQ (squat), BP (bench press), and DL (deadlift), in kg.</p>
+      <p class="chart-description">Best weight for SQ (squat), BP (bench press), and DL (deadlift), in kg. Updates when you save or import; connected points show the trend over your latest 12 lifting dates.</p>
       <div class="chart-empty" id="chart-empty">
         <span aria-hidden="true">🏁</span>
         <p>Log a squat, bench press, or deadlift to start your chart.</p>
@@ -106,9 +106,15 @@
           <p class="eyebrow">Every rep counts</p>
           <h2 id="history-title">Workout history</h2>
         </div>
-        <button class="export-button" id="export-button" type="button" disabled>
-          Export CSV
-        </button>
+        <div class="history-actions">
+          <button class="export-button" id="import-button" type="button">
+            Import CSV
+          </button>
+          <button class="export-button" id="export-button" type="button" disabled>
+            Export CSV
+          </button>
+        </div>
+        <input id="csv-input" type="file" accept=".csv,text/csv" hidden>
       </div>
       <p class="summary" id="summary">No exercises logged yet.</p>
       <div class="empty-state" id="empty-state">

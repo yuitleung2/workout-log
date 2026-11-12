@@ -1,5 +1,5 @@
 // Cache the app shell so a previously opened workout log can load without internet.
-const CACHE_NAME = "workout-log-v3";
+const CACHE_NAME = "workout-log-v4";
 const APP_FILES = [
   "./",
   "./index.html",
